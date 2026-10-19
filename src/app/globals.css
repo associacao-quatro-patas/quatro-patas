@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   ONG Protetora 4 Patas · Guia de estilos (paleta oficial do PDF)
+   ========================================================================== */
+:root {
+  /* Cores principais */
+  --rosa: #e91e7a; /* Rosa Principal: identidade, botões prioritários, ícones */
+  --rosa-escuro: #b3125b; /* Rosa Escuro: títulos, ênfases, hover */
+  --rosa-claro: #ffd6e7; /* Rosa Claro: fundo de cards, banners, etiquetas, bordas */
+  --rosa-pastel: #ffeaf2; /* Rosa Pastel: fundos secundários, cartões suaves */
+  /* Ações, alertas e acessibilidade */
+  --cinza: #2e2e2e; /* Cinza Escuro: texto principal */
+  --verde: #4caf7d; /* Verde Sucesso: WhatsApp e confirmações (texto escuro por contraste) */
+  --amarelo: #ffc857; /* Amarelo Alerta: avisos e pendências */
+  --vermelho: #ff6b6b; /* Vermelho Urgente: resgates críticos e urgências */
+
+  /* Tokens semânticos usados em todo o projeto (site e painel) */
+  --background: #ffffff;
+  --foreground: var(--cinza);
+  --muted: #5c5458; /* texto secundário: 7:1 sobre branco */
+  --surface: #ffffff;
+  --border: var(--rosa-claro);
+  --brand: var(--rosa-escuro); /* texto e botões do painel: 6,7:1 com branco (AA) */
+  --brand-foreground: #ffffff;
+}
+
+@theme inline {
+  --color-rosa: var(--rosa);
+  --color-rosa-escuro: var(--rosa-escuro);
+  --color-rosa-claro: var(--rosa-claro);
+  --color-rosa-pastel: var(--rosa-pastel);
+  --color-cinza: var(--cinza);
+  --color-verde: var(--verde);
+  --color-amarelo: var(--amarelo);
+  --color-vermelho: var(--vermelho);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+
+  --font-sans: var(--font-poppins);
+  --radius-card: 1rem;
+  --shadow-suave: 0 4px 18px -6px rgb(179 18 91 / 0.14);
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  background-color: var(--background);
+  /* Manchas de gradiente rosa bem sutis nos cantos, como no guia de estilos */
+  background-image:
+    radial-gradient(38rem 38rem at 100% 0%, rgb(255 214 231 / 0.45), transparent 70%),
+    radial-gradient(34rem 34rem at 0% 100%, rgb(255 214 231 / 0.35), transparent 70%);
+  background-attachment: fixed;
+  color: var(--foreground);
+  line-height: 1.65;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+}
+
+/* Âncoras (#pix-titulo, #transparencia…) não ficam escondidas sob o cabeçalho fixo */
+[id] {
+  scroll-margin-top: 6rem;
+}
+
+/* Foco visível e consistente em toda a interface */
+:focus-visible {
+  outline: 3px solid var(--rosa-escuro);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* =============================================================================
+   Componentes reutilizáveis do guia (botões em pílula, cards, títulos)
+   ========================================================================== */
+@layer components {
+  /* Ação prioritária: preenchido em Rosa Principal. Texto ≥ 18,7px em negrito
+     (texto "grande" no WCAG) para manter o contraste AA com o branco (4,3:1). */
+  .btn-primary {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-rosa px-6 py-2.5 text-[1.1875rem] font-bold text-white shadow-suave transition-colors hover:bg-rosa-escuro;
+  }
+  /* Ação secundária: contorno em Rosa Principal, texto em Rosa Escuro (6,7:1). */
+  .btn-secondary {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full border-2 border-rosa bg-white px-6 py-2 text-base font-semibold text-rosa-escuro transition-colors hover:bg-rosa-pastel;
+  }
+  /* WhatsApp: Verde Sucesso com texto Cinza Escuro (5:1; branco não passa no AA). */
+  .btn-whatsapp {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-verde px-6 py-2.5 text-base font-bold text-cinza shadow-suave transition-colors hover:brightness-95;
+  }
+  .card {
+    @apply rounded-card border border-rosa-claro bg-white shadow-suave;
+  }
+  /* Ícone em círculo Rosa Principal com símbolo branco */
+  .icon-circle {
+    @apply inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-rosa text-white;
+  }
+  /* Parágrafos de leitura: justificados, com hifenização automática em
+     português (lang="pt-BR") para não abrir espaços grandes no celular. */
+  .texto-justificado {
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+  }
+
+  /* Título de seção com traço de destaque abaixo */
+  .section-title {
+    @apply text-2xl font-bold text-cinza sm:text-3xl;
+  }
+  .section-title::after {
+    content: "";
+    @apply mt-2 block h-1 w-12 rounded-full bg-rosa;
+  }
+}
