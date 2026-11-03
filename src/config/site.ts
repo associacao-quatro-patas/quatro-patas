@@ -24,11 +24,13 @@ export const siteConfig = {
     { label: "Início", href: "/" },
     { label: "Sobre", href: "/sobre" },
     { label: "Adoção", href: "/adocao" },
+    { label: "Pets adotados", href: "/mural-de-adocoes" },
     { label: "Doações", href: "/doacoes" },
   ] satisfies NavItem[],
   adminNav: [
     { label: "Visão geral", href: "/admin" },
     { label: "Pets", href: "/admin/pets" },
+    { label: "Adotados", href: "/admin/adotados" },
     { label: "Instituição", href: "/admin/instituicao" },
     { label: "Doações", href: "/admin/doacoes" },
     { label: "Insumos", href: "/admin/insumos" },

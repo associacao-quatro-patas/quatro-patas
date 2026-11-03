@@ -27,6 +27,13 @@ export default function AdminPetsPage() {
           + Cadastrar animal
         </Link>
       </div>
+      <p className="mt-2 text-sm text-muted">
+        Para registrar uma adoção, edite o animal e mude o status para “Adotado”. Os adotados ficam na aba{" "}
+        <Link href="/admin/adotados" className="font-semibold text-brand underline">
+          Adotados
+        </Link>
+        .
+      </p>
       <Suspense fallback={<p className="mt-6 text-muted">Carregando…</p>}>
         <PetList />
       </Suspense>
@@ -36,10 +43,11 @@ export default function AdminPetsPage() {
 
 async function PetList() {
   const { supabase } = await requireAdmin();
-  // Como admin, a política RLS libera todos os pets, inclusive os adotados.
+  // Adotados ficam na aba própria (Adotados), com os dados do tutor.
   const { data: pets, error } = await supabase
     .from("pets")
     .select("*")
+    .neq("status", "adopted")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -53,7 +61,11 @@ async function PetList() {
   if (pets.length === 0) {
     return (
       <p className="mt-6 rounded-xl border border-dashed border-border bg-surface p-6 text-center text-muted">
-        Nenhum animal cadastrado ainda.
+        Nenhum animal para adoção cadastrado. Os adotados ficam na aba{" "}
+        <Link href="/admin/adotados" className="font-semibold text-brand underline">
+          Adotados
+        </Link>
+        .
       </p>
     );
   }

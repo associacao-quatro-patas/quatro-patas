@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { siteConfig } from "@/config/site";
 import { Container } from "@/components/ui/container";
-import { CloseIcon, HandHeartIcon, HomeIcon, MenuIcon, PawIcon, SearchIcon, UsersIcon } from "@/components/ui/icons";
+import { CloseIcon, HandHeartIcon, HeartIcon, HomeIcon, MenuIcon, PawIcon, SearchIcon, UsersIcon } from "@/components/ui/icons";
 import { FILTER_PARAMS, SEARCH_MAX_LENGTH } from "@/lib/pets/filters";
 import { Logo } from "./logo";
 
@@ -13,6 +13,7 @@ const NAV_ICONS: Record<string, typeof HomeIcon> = {
   "/": HomeIcon,
   "/sobre": UsersIcon,
   "/adocao": PawIcon,
+  "/mural-de-adocoes": HeartIcon,
   "/doacoes": HandHeartIcon,
 };
 
@@ -32,8 +33,8 @@ function NavLinks({ variant, pathname, onNavigate }: NavLinksProps) {
         key={item.href}
         href={item.href}
         aria-current={active ? "page" : undefined}
-        className={`relative inline-flex min-h-11 items-center rounded-full px-4 font-semibold transition-colors hover:bg-rosa-pastel ${
-          active ? "text-rosa-escuro after:absolute after:inset-x-4 after:bottom-1 after:h-0.5 after:rounded-full after:bg-rosa" : "text-cinza"
+        className={`relative inline-flex min-h-11 items-center rounded-full px-3 font-semibold whitespace-nowrap transition-colors hover:bg-rosa-pastel lg:px-4 ${
+          active ? "text-rosa-escuro after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:bg-rosa lg:after:inset-x-4" : "text-cinza"
         }`}
       >
         {item.label}

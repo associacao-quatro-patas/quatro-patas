@@ -10,7 +10,16 @@ import { deletePet } from "./actions";
  * e alguns navegadores móveis bloqueiam caixas nativas e ela devolve `false`
  * na hora, sem mostrar nada, e o botão parecia "não funcionar".
  */
-export function DeletePetButton({ petId, petName }: { petId: string; petName: string }) {
+export function DeletePetButton({
+  petId,
+  petName,
+  note = "A foto também será apagada.",
+}: {
+  petId: string;
+  petName: string;
+  /** O que mais será apagado junto (mostrado na confirmação). */
+  note?: string;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +107,7 @@ export function DeletePetButton({ petId, petName }: { petId: string; petName: st
       className="basis-full rounded-lg border border-red-200 bg-red-50 p-3"
     >
       <p className="text-sm text-red-900">
-        Excluir <strong>{petName}</strong>? A foto também será apagada. Esta ação não pode ser desfeita.
+        Excluir <strong>{petName}</strong>? {note} Esta ação não pode ser desfeita.
       </p>
       {error && (
         <p role="alert" className="mt-2 text-sm font-semibold text-red-800">

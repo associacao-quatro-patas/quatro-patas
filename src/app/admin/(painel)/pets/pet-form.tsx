@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { startTransition, useActionState, useEffect, useLayoutEffect, useState, type FormEvent } from "react";
-import type { Pet } from "@/types/database";
+import type { Pet, PetStatus } from "@/types/database";
+import { AdoptionFields } from "@/components/admin/adoption-fields";
+import { todayInManaus } from "@/lib/adoptions/validation";
 import {
   LIMITS,
   SEX_LABELS,
@@ -64,6 +66,9 @@ function PetFormFields({ pet }: { pet?: Pet }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  // "Adotado" abre os campos do tutor; ao salvar, o animal vai para a aba Adotados.
+  const [status, setStatus] = useState<PetStatus>(pet?.status ?? "available");
+  const [today] = useState(todayInManaus);
 
   // Envia a foto (se houver) direto ao Storage e depois chama a Server Action.
   const [state, formAction, pending] = useActionState(
@@ -186,12 +191,28 @@ function PetFormFields({ pet }: { pet?: Pet }) {
         </Field>
 
         <div className="sm:col-span-2">
-          <Field label="Status *" error={errors.status} hint="Animais adotados não aparecem no site.">
-            <select name="status" defaultValue={pet?.status ?? "available"} required className={inputClass}>
+          <Field
+            label="Status *"
+            error={errors.status}
+            hint="Animais adotados saem da página de adoção e passam para a aba Adotados e a página Pets adotados."
+          >
+            <select
+              name="status"
+              value={status}
+              onChange={(event) => setStatus(event.target.value as PetStatus)}
+              required
+              className={inputClass}
+            >
               <Options labels={STATUS_LABELS} />
             </select>
           </Field>
         </div>
+
+        {status === "adopted" && (
+          <div className="sm:col-span-2">
+            <AdoptionFields errors={errors} maxDate={today} />
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-x-6 gap-y-3 sm:col-span-2">
           <label className="inline-flex items-center gap-2">
@@ -246,7 +267,13 @@ function PetFormFields({ pet }: { pet?: Pet }) {
             disabled={pending}
             className="rounded-lg bg-brand px-5 py-3 font-semibold text-brand-foreground disabled:opacity-60"
           >
-            {pending ? "Salvando…" : pet ? "Salvar alterações" : "Cadastrar animal"}
+            {pending
+              ? "Salvando…"
+              : status === "adopted" && pet?.status !== "adopted"
+                ? "Salvar e registrar adoção"
+                : pet
+                  ? "Salvar alterações"
+                  : "Cadastrar animal"}
           </button>
         </div>
       </div>

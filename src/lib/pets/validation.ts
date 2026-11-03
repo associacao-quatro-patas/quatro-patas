@@ -16,12 +16,12 @@ export type PetFormFields = {
 
 export type PetFormErrors = Partial<Record<keyof PetFormFields | "photo", string>>;
 
-function text(formData: FormData, key: string) {
+export function text(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
 }
 
-function oneOf<T extends string>(value: string, labels: Record<T, string>): value is T {
+export function oneOf<T extends string>(value: string, labels: Record<T, string>): value is T {
   return Object.hasOwn(labels, value);
 }
 

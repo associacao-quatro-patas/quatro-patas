@@ -3,29 +3,22 @@
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { checkAdmin } from "@/lib/auth";
-import { PETS_BUCKET, PETS_CACHE_TAG, PHOTO_PATH_REGEX, slugify } from "@/lib/pets/constants";
+import { parseAdoptionForm, type AdoptionFields, type AdoptionFormErrors } from "@/lib/adoptions/validation";
+import { insertPetWithSlug, registerAdoption, removePetPhoto } from "@/lib/pets/admin";
+import { PETS_BUCKET, PETS_CACHE_TAG, PHOTO_PATH_REGEX } from "@/lib/pets/constants";
 import { parsePetForm, type PetFormErrors } from "@/lib/pets/validation";
 
 export type PetFormState = {
   message?: string;
-  errors?: PetFormErrors;
+  errors?: PetFormErrors & AdoptionFormErrors;
 };
-
-type ServerSupabase = Extract<Awaited<ReturnType<typeof checkAdmin>>, { ok: true }>["supabase"];
-
-const UNIQUE_VIOLATION = "23505";
-
-async function removePhoto(supabase: ServerSupabase, path: string | null | undefined) {
-  if (!path) return;
-  // Falha aqui só deixa um arquivo órfão no bucket; não deve desfazer o cadastro.
-  const { error } = await supabase.storage.from(PETS_BUCKET).remove([path]);
-  if (error) console.error("Não foi possível remover a foto antiga:", error.message);
-}
 
 /**
  * Cadastra (petId = null) ou edita um pet.
  * A foto já foi enviada pelo navegador direto ao Storage; aqui chega apenas o
  * nome do arquivo (photo_path). As políticas RLS também barram não-admins.
+ * Com status "Adotado", os dados do tutor são obrigatórios e o animal passa
+ * para a aba Adotados (o mesmo registro, com foto e dados preservados).
  */
 export async function savePet(
   petId: string | null,
@@ -34,73 +27,86 @@ export async function savePet(
 ): Promise<PetFormState> {
   const auth = await checkAdmin();
   const parsed = parsePetForm(formData);
+  const adopting = parsed.ok ? parsed.data.status === "adopted" : formData.get("status") === "adopted";
+  const adoption = adopting ? parseAdoptionForm(formData) : null;
 
   if (!auth.ok) return { message: auth.message };
-  if (!parsed.ok) {
+  if (!parsed.ok || (adoption && !adoption.ok)) {
     // A foto já subiu; descarta para não deixar arquivo órfão. O navegador
     // envia de novo no próximo envio do formulário.
     const uploaded = formData.get("photo_path");
     if (typeof uploaded === "string" && PHOTO_PATH_REGEX.test(uploaded)) {
-      await removePhoto(auth.supabase, uploaded);
+      await removePetPhoto(auth.supabase, uploaded);
     }
-    return { message: "Confira os campos destacados.", errors: parsed.errors };
+    return {
+      message: "Confira os campos destacados.",
+      errors: { ...(parsed.ok ? {} : parsed.errors), ...(adoption && !adoption.ok ? adoption.errors : {}) },
+    };
   }
 
   const { supabase } = auth;
   const { data, photoPath } = parsed;
+  const adoptionData: AdoptionFields | null = adoption?.ok ? adoption.data : null;
 
   if (petId === null) {
-    // Gera um slug a partir do nome; se já existir, tenta "nome-2", "nome-3"...
-    const base = slugify(data.name) || "pet";
-    let created = false;
-
-    for (let attempt = 1; attempt <= 20 && !created; attempt++) {
-      const slug = attempt === 1 ? base : `${base}-${attempt}`;
-      const { error } = await supabase
-        .from("pets")
-        .insert({ ...data, slug, ...(photoPath ? { photo_path: photoPath } : {}) });
-
-      if (!error) created = true;
-      else if (error.code !== UNIQUE_VIOLATION) {
-        await removePhoto(supabase, photoPath);
-        return { message: `Não foi possível cadastrar: ${error.message}` };
-      }
+    const created = await insertPetWithSlug(supabase, { ...data, ...(photoPath ? { photo_path: photoPath } : {}) });
+    if (!created.ok) {
+      await removePetPhoto(supabase, photoPath);
+      return { message: created.message };
     }
 
-    if (!created) {
-      await removePhoto(supabase, photoPath);
-      return { message: "Já existem muitos animais com este nome. Use um nome diferente." };
+    if (adoptionData) {
+      const adoptionError = await registerAdoption(supabase, created.id, adoptionData);
+      if (adoptionError) {
+        // Sem os dados do tutor o cadastro não fica pela metade: desfaz tudo.
+        await supabase.from("pets").delete().eq("id", created.id);
+        await removePetPhoto(supabase, photoPath);
+        return { message: adoptionError };
+      }
     }
   } else {
     const { data: current, error: findError } = await supabase
       .from("pets")
-      .select("photo_path")
+      .select("photo_path, status")
       .eq("id", petId)
       .maybeSingle();
 
     if (findError || !current) {
-      await removePhoto(supabase, photoPath);
+      await removePetPhoto(supabase, photoPath);
       return { message: "Animal não encontrado. Ele pode ter sido excluído." };
     }
 
+    // Ao adotar, o status só muda junto com os dados do tutor (registerAdoption).
     const { error } = await supabase
       .from("pets")
-      .update({ ...data, ...(photoPath ? { photo_path: photoPath } : {}) })
+      .update({
+        ...data,
+        ...(adoptionData ? { status: current.status } : {}),
+        ...(photoPath ? { photo_path: photoPath } : {}),
+      })
       .eq("id", petId);
 
     if (error) {
-      await removePhoto(supabase, photoPath);
+      await removePetPhoto(supabase, photoPath);
       return { message: `Não foi possível salvar: ${error.message}` };
     }
 
     // Foto substituída: apaga o arquivo anterior do bucket.
     if (photoPath && current.photo_path && current.photo_path !== photoPath) {
-      await removePhoto(supabase, current.photo_path);
+      await removePetPhoto(supabase, current.photo_path);
+    }
+
+    if (adoptionData) {
+      const adoptionError = await registerAdoption(supabase, petId, adoptionData);
+      if (adoptionError) {
+        updateTag(PETS_CACHE_TAG);
+        return { message: `Os dados do animal foram salvos, mas a adoção não foi registrada. ${adoptionError}` };
+      }
     }
   }
 
   updateTag(PETS_CACHE_TAG);
-  redirect("/admin/pets");
+  redirect(adoptionData ? "/admin/adotados" : "/admin/pets");
 }
 
 export type DeletePetResult = { ok: true; warning?: string } | { ok: false; message: string };

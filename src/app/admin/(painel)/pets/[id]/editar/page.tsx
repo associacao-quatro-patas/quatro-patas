@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
 import { PetForm } from "../../pet-form";
@@ -28,6 +28,8 @@ async function EditForm({ id }: { id: string }) {
   const { data: pet, error } = await supabase.from("pets").select("*").eq("id", id).maybeSingle();
   if (error) throw new Error(`Erro ao carregar o animal: ${error.message}`);
   if (!pet) notFound();
+  // Adotados são editados na aba Adotados, junto com os dados do tutor.
+  if (pet.status === "adopted") redirect(`/admin/adotados/${pet.id}/editar`);
 
   return <PetForm pet={pet} />;
 }

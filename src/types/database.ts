@@ -87,6 +87,21 @@ export type SitePhoto = {
   updated_at: string;
 };
 
+// Dados PRIVADOS da adoção (migração 007): somente administradores.
+export type PetAdoption = {
+  id: string;
+  pet_id: string;
+  tutor_name: string;
+  tutor_contact: string;
+  tutor_address: string | null;
+  adopted_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** O que o Mural de Adoções público recebe: nada além de id, nome e foto. */
+export type MuralPet = Pick<Pet, "id" | "name" | "photo_path">;
+
 type SupplyInsert = Pick<Supply, "name"> &
   Partial<Pick<Supply, "description" | "quantity" | "is_urgent" | "is_active" | "sort_order">>;
 
@@ -127,6 +142,12 @@ export type Database = {
         Update: Partial<Omit<SitePhoto, "slot" | "updated_at">>;
         Relationships: [];
       };
+      pet_adoptions: {
+        Row: PetAdoption;
+        Insert: Omit<PetAdoption, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<PetAdoption, "id" | "pet_id" | "created_at" | "updated_at">>;
+        Relationships: [];
+      };
       admins: {
         Row: { user_id: string; created_at: string };
         Insert: never;
@@ -141,6 +162,17 @@ export type Database = {
         Args: { items: unknown; max_items: number; max_name: number; max_text: number };
         Returns: boolean;
       };
+      register_adoption: {
+        Args: {
+          p_pet_id: string;
+          p_tutor_name: string;
+          p_tutor_contact: string;
+          p_tutor_address: string | null;
+          p_adopted_at: string;
+        };
+        Returns: undefined;
+      };
+      adoption_mural: { Args: Record<string, never>; Returns: MuralPet[] };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
