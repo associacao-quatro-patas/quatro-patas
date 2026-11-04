@@ -84,8 +84,9 @@ export function parseDonationForm(formData: FormData):
     errors.pix_merchant_city = `O padrão do QR Code aceita no máximo ${DONATION_LIMITS.merchantCity} caracteres.`;
   }
 
-  // Remove quebras de linha/espaços que costumam vir ao colar.
-  const copyPaste = text(formData, "pix_copy_paste").replace(/\s+/g, "");
+  // Remove só as quebras de linha (e o recuo depois delas) que costumam vir ao
+  // colar: os espaços do nome do recebedor fazem parte do código e entram no CRC.
+  const copyPaste = text(formData, "pix_copy_paste").replace(/[\r\n]+[ \t]*/g, "");
   if (copyPaste && (copyPaste.length < 50 || copyPaste.length > DONATION_LIMITS.copyPaste || !isValidPixPayload(copyPaste))) {
     errors.pix_copy_paste =
       "Código inválido. Cole o “Pix Copia e Cola” completo, exatamente como o banco forneceu.";
