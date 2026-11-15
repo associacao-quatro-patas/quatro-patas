@@ -1,6 +1,6 @@
 # Quatro Patas
 
-Site da instituição Quatro Patas: adoção de animais, doações e painel administrativo.
+Site da instituição Quatro Patas: adoção de animais, pets adotados, doações e painel administrativo.
 
 **Stack:** Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · Supabase (Auth, Postgres, Storage).
 
